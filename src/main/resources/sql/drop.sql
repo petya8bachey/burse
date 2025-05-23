@@ -1,0 +1,1 @@
+DROP DATABASE IF EXISTS trading_system;
