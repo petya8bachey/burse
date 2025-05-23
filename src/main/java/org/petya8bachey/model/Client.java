@@ -10,6 +10,8 @@ public record Client(
         String clientType,
         LocalDate registrationDate,
         int brokerId,
+        String dbUsername,  // Добавлено
+        String dbPassword,  // Добавлено
         Instant createdAt,
         Instant updatedAt
 ) {}
