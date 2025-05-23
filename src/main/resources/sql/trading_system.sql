@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS Broker (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Client table
+-- Client table with additional fields for database authentication
 CREATE TABLE IF NOT EXISTS Client (
     client_id SERIAL PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS Client (
     client_type VARCHAR(10) NOT NULL CHECK (client_type IN ('Individual', 'Corporate')),
     registration_date DATE NOT NULL DEFAULT CURRENT_DATE,
     broker_id INTEGER NOT NULL,
+    db_username VARCHAR(50) UNIQUE,  -- Stores the database username for the client
+    db_password VARCHAR(100),        -- Stores the encrypted password for the client
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_broker
@@ -182,16 +184,117 @@ GRANT SELECT ON Transaction TO trading_broker;
 GRANT SELECT ON TradingSession TO trading_broker;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA trading TO trading_broker;
 
+-- For trading_client, we grant basic access and rely on RLS for filtering
 GRANT CONNECT ON DATABASE trading_system TO trading_client;
 GRANT USAGE ON SCHEMA trading TO trading_client;
 GRANT SELECT ON Stock TO trading_client;
-GRANT SELECT ON Client TO trading_client;
+GRANT SELECT ON Client TO trading_client;  -- RLS will filter this
 GRANT SELECT ON TradingSession TO trading_client;
-GRANT SELECT ON Transaction TO trading_client;
+GRANT SELECT ON Transaction TO trading_client;  -- RLS will filter this
 
 GRANT CONNECT ON DATABASE trading_system TO trading_analyst;
 GRANT USAGE ON SCHEMA trading TO trading_analyst;
 GRANT SELECT ON ALL TABLES IN SCHEMA trading TO trading_analyst;
+
+-- Function to create a new client user
+CREATE OR REPLACE FUNCTION trading.create_client_user(
+    p_client_id INTEGER,
+    p_username VARCHAR,
+    p_password VARCHAR
+) RETURNS VOID AS $$
+DECLARE
+    v_sql TEXT;
+BEGIN
+    -- Store the username and encrypted password in the Client table
+    UPDATE Client
+    SET db_username = p_username,
+        db_password = crypt(p_password, gen_salt('bf'))
+    WHERE client_id = p_client_id;
+
+    -- Create the database user
+    v_sql := format('CREATE USER %I WITH PASSWORD %L', p_username, p_password);
+    EXECUTE v_sql;
+
+    -- Grant the trading_client role to the new user
+    v_sql := format('GRANT trading_client TO %I', p_username);
+    EXECUTE v_sql;
+
+    -- Set default permissions for the client
+    PERFORM trading.set_client_permissions(p_client_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to set client permissions
+CREATE OR REPLACE FUNCTION trading.set_client_permissions(
+    p_client_id INTEGER
+) RETURNS VOID AS $$
+DECLARE
+    v_username VARCHAR;
+BEGIN
+    -- Get the client's username
+    SELECT db_username INTO v_username FROM Client WHERE client_id = p_client_id;
+
+    IF v_username IS NULL THEN
+        RAISE EXCEPTION 'Client does not have a database username';
+    END IF;
+
+    -- Set row-level security identifier for this client
+    EXECUTE format('ALTER ROLE %I SET app.current_client_id = %s', v_username, p_client_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to authenticate a client
+CREATE OR REPLACE FUNCTION trading.authenticate_client(
+    p_username VARCHAR,
+    p_password VARCHAR
+) RETURNS INTEGER AS $$
+DECLARE
+    v_client_id INTEGER;
+BEGIN
+    -- Verify credentials and get client_id
+    SELECT client_id INTO v_client_id
+    FROM Client
+    WHERE db_username = p_username
+    AND db_password = crypt(p_password, db_password);
+
+    IF v_client_id IS NULL THEN
+        RAISE EXCEPTION 'Invalid username or password';
+    END IF;
+
+    RETURN v_client_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to change client password
+CREATE OR REPLACE FUNCTION trading.change_client_password(
+    p_client_id INTEGER,
+    p_old_password VARCHAR,
+    p_new_password VARCHAR
+) RETURNS VOID AS $$
+DECLARE
+    v_username VARCHAR;
+    v_sql TEXT;
+BEGIN
+    -- Verify old password and get username
+    SELECT db_username INTO v_username
+    FROM Client
+    WHERE client_id = p_client_id
+    AND db_password = crypt(p_old_password, db_password);
+
+    IF v_username IS NULL THEN
+        RAISE EXCEPTION 'Invalid old password';
+    END IF;
+
+    -- Update password in Client table
+    UPDATE Client
+    SET db_password = crypt(p_new_password, gen_salt('bf'))
+    WHERE client_id = p_client_id;
+
+    -- Change database user password
+    v_sql := format('ALTER USER %I WITH PASSWORD %L', v_username, p_new_password);
+    EXECUTE v_sql;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Row-level security policies
 ALTER TABLE Client ENABLE ROW LEVEL SECURITY;
@@ -201,7 +304,9 @@ ALTER TABLE Broker ENABLE ROW LEVEL SECURITY;
 -- Client table policies
 CREATE POLICY client_select_policy ON Client
     FOR SELECT
-    USING (broker_id = current_setting('app.current_broker_id')::INT OR pg_has_role('trading_admin', 'member'));
+    USING (client_id = current_setting('app.current_client_id')::INT
+           OR broker_id = current_setting('app.current_broker_id')::INT
+           OR pg_has_role('trading_admin', 'member'));
 
 CREATE POLICY client_update_policy ON Client
     FOR UPDATE
@@ -219,8 +324,6 @@ CREATE POLICY transaction_select_policy ON Transaction
 CREATE POLICY broker_select_policy ON Broker
     FOR SELECT
     USING (broker_id = current_setting('app.current_broker_id')::INT OR pg_has_role('trading_admin', 'member'));
-
--- Create functions for common operations
 
 -- Function to update current_price in Stock table
 CREATE OR REPLACE FUNCTION trading.update_stock_price(
@@ -253,5 +356,3 @@ BEGIN
     HAVING SUM(CASE WHEN t.direction = 'BUY' THEN t.volume ELSE -t.volume END) > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- [Rest of the script remains the same with IF NOT EXISTS added where appropriate]

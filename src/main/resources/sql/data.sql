@@ -4,6 +4,9 @@
 -- Set the schema
 SET search_path TO trading, public;
 
+-- Enable pgcrypto extension for password hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Clear existing data (optional - uncomment if needed)
 -- TRUNCATE TABLE Broker, Client, Stock, TradingSession, Transaction,
 --               Client_TradingSession, Client_Stock, Broker_Stock RESTART IDENTITY;
@@ -17,25 +20,68 @@ INSERT INTO Broker (license_number, company_name, status) VALUES
 ('BRK-1005', 'Fidelity Investments', 'Suspended'),
 ('BRK-1006', 'TD Ameritrade', 'Revoked');
 
--- Insert sample clients (individuals and corporations)
-INSERT INTO Client (full_name, tax_id, client_type, broker_id, registration_date) VALUES
+-- Insert sample clients (individuals and corporations) with initial NULL for db credentials
+INSERT INTO Client (full_name, tax_id, client_type, broker_id, registration_date, db_username, db_password) VALUES
 -- Goldman Sachs clients
-('John Smith', 'TID-1001', 'Individual', 1, '2020-01-15'),
-('Alice Johnson', 'TID-1002', 'Individual', 1, '2020-03-22'),
-('Tech Solutions Inc', 'TID-2001', 'Corporate', 1, '2019-11-05'),
+('John Smith', 'TID-1001', 'Individual', 1, '2020-01-15', NULL, NULL),
+('Alice Johnson', 'TID-1002', 'Individual', 1, '2020-03-22', NULL, NULL),
+('Tech Solutions Inc', 'TID-2001', 'Corporate', 1, '2019-11-05', NULL, NULL),
 
 -- Morgan Stanley clients
-('Robert Brown', 'TID-1003', 'Individual', 2, '2021-02-18'),
-('Global Ventures LLC', 'TID-2002', 'Corporate', 2, '2020-07-30'),
+('Robert Brown', 'TID-1003', 'Individual', 2, '2021-02-18', NULL, NULL),
+('Global Ventures LLC', 'TID-2002', 'Corporate', 2, '2020-07-30', NULL, NULL),
 
 -- J.P. Morgan clients
-('Emily Davis', 'TID-1004', 'Individual', 3, '2021-05-10'),
-('Michael Wilson', 'TID-1005', 'Individual', 3, '2021-06-15'),
-('Innovate Corp', 'TID-2003', 'Corporate', 3, '2020-09-12'),
+('Emily Davis', 'TID-1004', 'Individual', 3, '2021-05-10', NULL, NULL),
+('Michael Wilson', 'TID-1005', 'Individual', 3, '2021-06-15', NULL, NULL),
+('Innovate Corp', 'TID-2003', 'Corporate', 3, '2020-09-12', NULL, NULL),
 
 -- Charles Schwab clients
-('Sarah Miller', 'TID-1006', 'Individual', 4, '2021-03-05'),
-('Future Holdings', 'TID-2004', 'Corporate', 4, '2020-12-01');
+('Sarah Miller', 'TID-1006', 'Individual', 4, '2021-03-05', NULL, NULL),
+('Future Holdings', 'TID-2004', 'Corporate', 4, '2020-12-01', NULL, NULL);
+
+-- Create database users for each client
+DO $$
+DECLARE
+    client_record RECORD;
+    username TEXT;
+    password TEXT;
+BEGIN
+    FOR client_record IN SELECT client_id, full_name, tax_id FROM Client WHERE client_type = 'Individual' LOOP
+        username := 'client_' || lower(regexp_replace(client_record.full_name, '[^a-zA-Z]', '', 'g'));
+        password := 'pass_' || substr(client_record.tax_id, 5) || '!Ind';
+
+        -- Update client record with credentials
+        UPDATE Client
+        SET db_username = username,
+            db_password = md5(password) -- Using md5 instead of crypt for simplicity
+        WHERE client_id = client_record.client_id;
+
+        -- Create database user
+        EXECUTE format('CREATE USER %I WITH PASSWORD %L', username, password);
+        EXECUTE format('GRANT trading_client TO %I', username);
+        EXECUTE format('ALTER ROLE %I SET app.current_client_id = %s', username, client_record.client_id);
+    END LOOP;
+
+    FOR client_record IN SELECT client_id, full_name, tax_id FROM Client WHERE client_type = 'Corporate' LOOP
+        username := 'corp_' || lower(regexp_replace(client_record.full_name, '[^a-zA-Z0-9]', '', 'g'));
+        password := 'pass_' || substr(client_record.tax_id, 5) || '!Corp';
+
+        -- Update client record with credentials
+        UPDATE Client
+        SET db_username = username,
+            db_password = md5(password) -- Using md5 instead of crypt for simplicity
+        WHERE client_id = client_record.client_id;
+
+        -- Create database user
+        EXECUTE format('CREATE USER %I WITH PASSWORD %L', username, password);
+        EXECUTE format('GRANT trading_client TO %I', username);
+        EXECUTE format('ALTER ROLE %I SET app.current_client_id = %s', username, client_record.client_id);
+    END LOOP;
+END
+$$;
+
+-- [Rest of the original data.sql file remains the same]
 
 -- Insert sample stocks
 INSERT INTO Stock (company_name, sector, current_price, is_active) VALUES
@@ -161,10 +207,16 @@ UPDATE Stock SET current_price = 137.50, last_updated = CURRENT_TIMESTAMP WHERE 
 UPDATE Stock SET current_price = 208.90, last_updated = CURRENT_TIMESTAMP WHERE stock_id = 4;
 UPDATE Stock SET current_price = 157.25, last_updated = CURRENT_TIMESTAMP WHERE stock_id = 5;
 
--- Display counts of inserted data
+-- Display counts of inserted data and client credentials
 SELECT
     (SELECT COUNT(*) FROM Broker) AS broker_count,
     (SELECT COUNT(*) FROM Client) AS client_count,
     (SELECT COUNT(*) FROM Stock) AS stock_count,
     (SELECT COUNT(*) FROM TradingSession) AS session_count,
     (SELECT COUNT(*) FROM Transaction) AS transaction_count;
+
+-- Display client credentials for reference
+SELECT client_id, full_name, db_username,
+       'pass_' || substr(tax_id, 5) || CASE WHEN client_type = 'Individual' THEN '!Ind' ELSE '!Corp' END AS password
+FROM Client
+ORDER BY client_id;
