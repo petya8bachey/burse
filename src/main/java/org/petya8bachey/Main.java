@@ -1,20 +1,23 @@
 package org.petya8bachey;
 
-import org.petya8bachey.service.DatabaseService;
-import org.petya8bachey.ui.MainMenu;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean; // NEW
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // NEW
+import org.springframework.security.crypto.password.PasswordEncoder; // NEW
 
-import java.io.IOException;
+@SpringBootApplication
+@ComponentScan(basePackages = "org.petya8bachey") // Убедитесь, что Spring сканирует ваши пакеты
 
 public class Main {
     public static void main(String[] args) {
-        try (DatabaseService dbService = new DatabaseService()) {
-            MainMenu mainMenu = new MainMenu(dbService);
-            mainMenu.run();
-        } catch (IOException e) {
-            System.err.println("Failed to load configuration: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Application error: " + e.getMessage());
-            e.printStackTrace();
-        }
+        SpringApplication.run(Main.class, args);
+    }
+
+    // NEW: Define a PasswordEncoder bean
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
