@@ -1,3 +1,5 @@
+// src/main/java/org/petya8bachey/model/Transaction.java
+
 package org.petya8bachey.model;
 
 import jakarta.persistence.*;
@@ -33,24 +35,21 @@ public class Transaction {
 
     // Relationships
 
-    // "Совершает" (М:1) Сделка -> Клиент
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", nullable = false) // Foreign key column
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
-    // "Осуществляется в" (М:1) Сделка -> Торговая сессия
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false) // Foreign key column
+    // CHANGE THIS LINE: from FetchType.LAZY to FetchType.EAGER
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "session_id", nullable = false)
     private Session session;
 
-    // "Фиксирует" (1:М) Репозиторий -> Сделка (Transaction is on the 'Many' side)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "repo_id", nullable = false) // Foreign key column
+    @JoinColumn(name = "repo_id", nullable = false)
     private Repository repository;
 
     // A transaction involves a specific stock
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id", nullable = false) // Foreign key column
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 }
-

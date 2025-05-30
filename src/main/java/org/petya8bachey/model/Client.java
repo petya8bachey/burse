@@ -3,6 +3,7 @@ package org.petya8bachey.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode; // Import this
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.petya8bachey.enums.ClientType;
@@ -32,45 +33,43 @@ public class Client {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "client_type", nullable = false)
-    private ClientType clientType = ClientType.PHYSICAL; // Default value
+    private ClientType clientType = ClientType.PHYSICAL;
 
     @Column(name = "registration_date", nullable = false, columnDefinition = "DATE DEFAULT CURRENT_DATE")
-    private LocalDate registrationDate; // Default value set by DB
+    private LocalDate registrationDate;
 
-    // NEW: One-to-one relationship with User for login credentials
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id", unique = true) // user_id is foreign key and unique
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id", unique = true)
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private User user;
 
-    // Relationships
-
-    // "Заключает договор с" (1:M) Брокер -> Клиент (Client is on the 'Many' side)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "broker_id") // Foreign key column
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "broker_id")
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Broker broker;
 
-    // "Участвует в" (М:М) Клиент -> Торговая сессия
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "client_session",
             joinColumns = @JoinColumn(name = "client_id"),
             inverseJoinColumns = @JoinColumn(name = "session_id")
     )
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Set<Session> participatingSessions = new HashSet<>();
 
-    // "Торгует" (М:М) Клиент -> Акция
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "client_stock",
             joinColumns = @JoinColumn(name = "client_id"),
             inverseJoinColumns = @JoinColumn(name = "stock_id")
     )
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Set<Stock> tradedStocks = new HashSet<>();
 
-    // "Совершает" (М:1) Сделка -> Клиент (Client is on the '1' side)
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Set<Transaction> transactions = new HashSet<>();
 }

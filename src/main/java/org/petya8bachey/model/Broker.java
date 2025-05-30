@@ -3,6 +3,7 @@ package org.petya8bachey.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode; // Import this
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.petya8bachey.enums.BrokerStatus;
@@ -31,27 +32,25 @@ public class Broker {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private BrokerStatus status = BrokerStatus.ACTIVE; // Default value
+    private BrokerStatus status = BrokerStatus.ACTIVE;
 
-    // NEW: One-to-one relationship with User for login credentials
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id", unique = true) // user_id is foreign key and unique
+    @JoinColumn(name = "user_id", unique = true)
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private User user;
 
-    // Relationships
-
-    // "Заключает договор с" (1:M) Брокер -> Клиент
     @OneToMany(mappedBy = "broker", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Set<Client> clients = new HashSet<>();
 
-    // "Регистрирует" (М:М) Брокер -> Акция
     @ManyToMany
     @JoinTable(
             name = "broker_stock",
             joinColumns = @JoinColumn(name = "broker_id"),
             inverseJoinColumns = @JoinColumn(name = "stock_id")
     )
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Set<Stock> registeredStocks = new HashSet<>();
 }

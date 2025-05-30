@@ -1,21 +1,43 @@
 package org.petya8bachey;
 
+import org.petya8bachey.frame.LoginFrame;
+import org.petya8bachey.service.StockService;
+import org.petya8bachey.service.TransactionService;
+import org.petya8bachey.service.UserService;
+import org.petya8bachey.service.SessionService; // Import SessionService
+import org.petya8bachey.service.RepositoryService; // Import RepositoryService
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean; // NEW
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // NEW
-import org.springframework.security.crypto.password.PasswordEncoder; // NEW
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.swing.*;
 
 @SpringBootApplication
-@ComponentScan(basePackages = "org.petya8bachey") // Убедитесь, что Spring сканирует ваши пакеты
-
+@ComponentScan(basePackages = "org.petya8bachey")
 public class Main {
     public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+        SpringApplication app = new SpringApplication(Main.class);
+        app.setHeadless(false);
+        ApplicationContext context = app.run(args);
+
+        // Получаем все необходимые сервисы из Spring контекста
+        UserService userService = context.getBean(UserService.class);
+        StockService stockService = context.getBean(StockService.class);
+        TransactionService transactionService = context.getBean(TransactionService.class);
+        SessionService sessionService = context.getBean(SessionService.class); // Get SessionService
+        RepositoryService repositoryService = context.getBean(RepositoryService.class); // Get RepositoryService
+
+        SwingUtilities.invokeLater(() -> {
+            // Передаем все сервисы в конструктор LoginFrame
+            new LoginFrame(userService, stockService, transactionService, sessionService, repositoryService).setVisible(true); // Pass new services
+        });
     }
 
-    // NEW: Define a PasswordEncoder bean
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

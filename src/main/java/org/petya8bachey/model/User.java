@@ -3,6 +3,7 @@ package org.petya8bachey.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode; // Import this
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.petya8bachey.enums.UserRole;
@@ -24,7 +25,7 @@ public class User {
     @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 255) // Store hashed password
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
@@ -32,15 +33,15 @@ public class User {
     private UserRole role;
 
     @Column(name = "enabled", nullable = false)
-    private boolean enabled = true; // For account activation/deactivation
+    private boolean enabled = true;
 
-    // Optional: One-to-one relationship to link to specific business entities
-    // A user can be linked to either a Broker or a Client, or neither (if it's an Admin)
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Broker brokerProfile;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = true)
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude // ADD THIS LINE
     private Client clientProfile;
 }

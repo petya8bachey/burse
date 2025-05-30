@@ -1,0 +1,3 @@
+client1 : clientpass
+admin : adminpass
+broker1 : brokerpass
