@@ -14,7 +14,7 @@ import java.util.UUID;
 public class BrokerService {
 
     private final BrokerRepository brokerRepository;
-    private final UserRepository userRepository; // Для проверки связи пользователя с брокером
+    private final UserRepository userRepository;
 
     public BrokerService(BrokerRepository brokerRepository, UserRepository userRepository) {
         this.brokerRepository = brokerRepository;

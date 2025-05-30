@@ -20,9 +20,7 @@ public class RepositoryService {
         return repositoryRepository.findById(id);
     }
 
-    // Method to find the main repository (assuming there's one or we take the first)
     public Optional<Repository> findMainRepository() {
-        // For simplicity, find the first repository found
         return repositoryRepository.findAll().stream().findFirst();
     }
 }

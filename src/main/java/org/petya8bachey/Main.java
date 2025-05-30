@@ -4,8 +4,8 @@ import org.petya8bachey.frame.LoginFrame;
 import org.petya8bachey.service.StockService;
 import org.petya8bachey.service.TransactionService;
 import org.petya8bachey.service.UserService;
-import org.petya8bachey.service.SessionService; // Import SessionService
-import org.petya8bachey.service.RepositoryService; // Import RepositoryService
+import org.petya8bachey.service.SessionService;
+import org.petya8bachey.service.RepositoryService;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,15 +25,13 @@ public class Main {
         app.setHeadless(false);
         ApplicationContext context = app.run(args);
 
-        // Получаем все необходимые сервисы из Spring контекста
         UserService userService = context.getBean(UserService.class);
         StockService stockService = context.getBean(StockService.class);
         TransactionService transactionService = context.getBean(TransactionService.class);
-        SessionService sessionService = context.getBean(SessionService.class); // Get SessionService
-        RepositoryService repositoryService = context.getBean(RepositoryService.class); // Get RepositoryService
+        SessionService sessionService = context.getBean(SessionService.class);
+        RepositoryService repositoryService = context.getBean(RepositoryService.class);
 
         SwingUtilities.invokeLater(() -> {
-            // Передаем все сервисы в конструктор LoginFrame
             new LoginFrame(userService, stockService, transactionService, sessionService, repositoryService).setVisible(true); // Pass new services
         });
     }

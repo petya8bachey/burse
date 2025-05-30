@@ -6,15 +6,12 @@ import org.petya8bachey.model.*;
 import org.petya8bachey.model.Transaction;
 import org.petya8bachey.repository.*;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // NEW
-import org.springframework.security.crypto.password.PasswordEncoder; // NEW
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -25,35 +22,31 @@ public class DataLoader implements CommandLineRunner {
     private final SessionRepository sessionRepository;
     private final RepositoryRepository repositoryRepository;
     private final TransactionRepository transactionRepository;
-    private final UserRepository userRepository; // NEW
-    private final PasswordEncoder passwordEncoder; // NEW
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public DataLoader(BrokerRepository brokerRepository, ClientRepository clientRepository,
                       StockRepository stockRepository, SessionRepository sessionRepository,
                       RepositoryRepository repositoryRepository, TransactionRepository transactionRepository,
-                      UserRepository userRepository, // NEW
-                      PasswordEncoder passwordEncoder) { // NEW
+                      UserRepository userRepository,
+                      PasswordEncoder passwordEncoder) {
         this.brokerRepository = brokerRepository;
         this.clientRepository = clientRepository;
         this.stockRepository = stockRepository;
         this.sessionRepository = sessionRepository;
         this.repositoryRepository = repositoryRepository;
         this.transactionRepository = transactionRepository;
-        this.userRepository = userRepository; // NEW
-        this.passwordEncoder = passwordEncoder; // NEW
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    @Transactional // Важно: все операции внутри должны быть в одной транзакции
+    @Transactional
     public void run(String... args) throws Exception {
-        // Проверяем, есть ли уже данные, чтобы не добавлять их при каждом перезапуске
         if (brokerRepository.count() == 0) {
             System.out.println("Loading initial data...");
-
-            // NEW: Create Admin User
             createUser("admin", "adminpass", UserRole.ADMIN, null, null);
 
-            // 1. Создание брокеров и их пользователей
             User broker1User = createUser("broker1", "brokerpass", UserRole.BROKER, null, null);
             Broker broker1 = createBroker("LIC-BROKER-001", "Alpha Brokerage Inc.", BrokerStatus.ACTIVE, broker1User);
             broker1User.setBrokerProfile(broker1); // Link user to broker profile
@@ -64,21 +57,18 @@ public class DataLoader implements CommandLineRunner {
             broker2User.setBrokerProfile(broker2);
             userRepository.save(broker2User);
 
-            // 2. Создание акций
             Stock stockAAPL = createStock("AAPL", "Apple Inc.", StockSector.TECH, new BigDecimal("175.50"));
             Stock stockMSFT = createStock("MSFT", "Microsoft Corp.", StockSector.TECH, new BigDecimal("420.00"));
             Stock stockSBER = createStock("SBER", "Sberbank", StockSector.FINANCE, new BigDecimal("300.00"));
 
-            // 3. Регистрация акций у брокеров (М:М)
             broker1.getRegisteredStocks().add(stockAAPL);
             broker1.getRegisteredStocks().add(stockMSFT);
-            brokerRepository.save(broker1); // Сохраняем, чтобы обновить связь
+            brokerRepository.save(broker1);
 
             broker2.getRegisteredStocks().add(stockSBER);
-            broker2.getRegisteredStocks().add(stockAAPL); // Одна акция может быть у разных брокеров
+            broker2.getRegisteredStocks().add(stockAAPL);
             brokerRepository.save(broker2);
 
-            // 4. Создание клиентов и их пользователей
             User client1User = createUser("client1", "clientpass", UserRole.CLIENT, null, null);
             Client client1 = createClient("Иванов Иван Иванович", "123456789012", ClientType.PHYSICAL, LocalDate.now().minusMonths(6), broker1, client1User);
             client1User.setClientProfile(client1);
@@ -94,7 +84,6 @@ public class DataLoader implements CommandLineRunner {
             client3User.setClientProfile(client3);
             userRepository.save(client3User);
 
-            // 5. Клиенты торгуют акциями (М:М)
             client1.getTradedStocks().add(stockAAPL);
             client1.getTradedStocks().add(stockSBER);
             clientRepository.save(client1);
@@ -106,11 +95,9 @@ public class DataLoader implements CommandLineRunner {
             client3.getTradedStocks().add(stockMSFT);
             clientRepository.save(client3);
 
-            // 6. Создание торговых сессий
             Session sessionToday = createSession(LocalDateTime.now().minusHours(2), LocalDateTime.now().plusHours(6), SessionStatus.ACTIVE);
             Session sessionYesterday = createSession(LocalDateTime.now().minusDays(1).withHour(9).withMinute(0), LocalDateTime.now().minusDays(1).withHour(18).withMinute(0), SessionStatus.CLOSED);
 
-            // 7. Клиенты участвуют в сессиях (М:М)
             client1.getParticipatingSessions().add(sessionToday);
             client1.getParticipatingSessions().add(sessionYesterday);
             clientRepository.save(client1);
@@ -121,10 +108,8 @@ public class DataLoader implements CommandLineRunner {
             client3.getParticipatingSessions().add(sessionToday);
             clientRepository.save(client3);
 
-            // 8. Создание репозитория
             org.petya8bachey.model.Repository mainRepo = createRepository(250);
 
-            // 9. Создание сделок
             createTransaction(client1, stockAAPL, sessionToday, mainRepo, new BigDecimal("175.00"), 10, TransactionDirection.BUY);
             createTransaction(client2, stockMSFT, sessionToday, mainRepo, new BigDecimal("419.80"), 5, TransactionDirection.SELL);
             createTransaction(client1, stockSBER, sessionYesterday, mainRepo, new BigDecimal("299.50"), 20, TransactionDirection.BUY);
@@ -136,27 +121,23 @@ public class DataLoader implements CommandLineRunner {
         }
     }
 
-    // --- Вспомогательные методы для создания сущностей ---
-
-    // NEW: Helper method for creating User
     private User createUser(String username, String password, UserRole role, Broker brokerProfile, Client clientProfile) {
         User user = new User();
         user.setUsername(username);
-        user.setPasswordHash(passwordEncoder.encode(password)); // Hash the password
+        user.setPasswordHash(passwordEncoder.encode(password));
         user.setRole(role);
         user.setEnabled(true);
-        user.setBrokerProfile(brokerProfile); // Set profile if available
-        user.setClientProfile(clientProfile); // Set profile if available
+        user.setBrokerProfile(brokerProfile);
+        user.setClientProfile(clientProfile);
         return userRepository.save(user);
     }
 
-    // UPDATED: createBroker now accepts a User
     private Broker createBroker(String licenseNumber, String companyName, BrokerStatus status, User user) {
         Broker broker = new Broker();
         broker.setLicenseNumber(licenseNumber);
         broker.setCompanyName(companyName);
         broker.setStatus(status);
-        broker.setUser(user); // Link user to broker
+        broker.setUser(user);
         return brokerRepository.save(broker);
     }
 
@@ -169,7 +150,6 @@ public class DataLoader implements CommandLineRunner {
         return stockRepository.save(stock);
     }
 
-    // UPDATED: createClient now accepts a User
     private Client createClient(String fullName, String taxId, ClientType clientType, LocalDate registrationDate, Broker broker, User user) {
         Client client = new Client();
         client.setFullName(fullName);
@@ -177,7 +157,7 @@ public class DataLoader implements CommandLineRunner {
         client.setClientType(clientType);
         client.setRegistrationDate(registrationDate);
         client.setBroker(broker);
-        client.setUser(user); // Link user to client
+        client.setUser(user);
         return clientRepository.save(client);
     }
 

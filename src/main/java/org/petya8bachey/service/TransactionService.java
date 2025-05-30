@@ -33,13 +33,11 @@ public class TransactionService {
                 .orElseThrow(() -> new NoSuchElementException("Transaction not found with ID: " + id));
     }
 
-    // Method to get all transactions for a specific client
     public List<Transaction> getTransactionsByClient(Client client) {
         return transactionRepository.findByClient(client);
     }
 
-    // New method to create and save a transaction
-    @Transactional // Ensure this operation is transactional
+    @Transactional
     public Transaction createTransaction(Client client, Stock stock, Session session, Repository repository,
                                          BigDecimal price, int volume, TransactionDirection direction) {
         Transaction tx = new Transaction();
@@ -50,11 +48,6 @@ public class TransactionService {
         tx.setPrice(price);
         tx.setVolume(volume);
         tx.setDirection(direction);
-
-        // Note: Additional business logic (like checking client balance,
-        // updating stock quantity, etc.) would go here in a real application.
-        // For this implementation, we just save the transaction record.
-
         return transactionRepository.save(tx);
     }
 }

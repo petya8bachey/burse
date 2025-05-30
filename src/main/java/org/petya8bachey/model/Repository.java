@@ -17,24 +17,21 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Repository { // Renamed from "Репозиторий" to "Repository"
+public class Repository {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "repo_id", columnDefinition = "uuid DEFAULT gen_random_uuid()")
     private UUID repoId;
 
-    @UpdateTimestamp // Automatically updates on entity update
+    @UpdateTimestamp
     @Column(name = "last_update", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime lastUpdate;
 
-    @Column(name = "storage_size_gb") // Nullable
+    @Column(name = "storage_size_gb")
     private Integer storageSizeGb;
 
-    // Relationships
-
-    // "Фиксирует" (1:М) Репозиторий -> Сделка
     @OneToMany(mappedBy = "repository", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
     private Set<Transaction> transactions = new HashSet<>();
 }

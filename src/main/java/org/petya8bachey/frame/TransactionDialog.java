@@ -141,23 +141,18 @@ public class TransactionDialog extends JDialog {
 
             messageLabel.setForeground(Color.BLUE);
             messageLabel.setText("Сделка успешно совершена!");
-            transactionSuccessful = true; // Set success flag
+            transactionSuccessful = true;
 
-            // Optionally, close the dialog after a short delay or on OK button click
-            // For now, we'll just leave the success message and close on dispose().
-            // A better approach might be to show a confirmation and then dispose.
             JOptionPane.showMessageDialog(this, "Сделка успешно совершена!", "Успех", JOptionPane.INFORMATION_MESSAGE);
-            dispose(); // Close dialog after success message
+            dispose();
 
         } catch (Exception ex) {
             ex.printStackTrace(); // Log the error
             messageLabel.setForeground(Color.RED);
             messageLabel.setText("Ошибка при совершении сделки.");
-            // You might want more specific error handling here
         }
     }
 
-    // Method to check if the transaction was successful after the dialog is closed
     public boolean isTransactionSuccessful() {
         return transactionSuccessful;
     }

@@ -40,12 +40,12 @@ public class Client {
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id", unique = true)
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "broker_id")
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Broker broker;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -55,7 +55,7 @@ public class Client {
             inverseJoinColumns = @JoinColumn(name = "session_id")
     )
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Set<Session> participatingSessions = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -65,11 +65,11 @@ public class Client {
             inverseJoinColumns = @JoinColumn(name = "stock_id")
     )
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Set<Stock> tradedStocks = new HashSet<>();
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Set<Transaction> transactions = new HashSet<>();
 }

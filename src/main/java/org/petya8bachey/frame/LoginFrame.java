@@ -7,8 +7,8 @@ import org.petya8bachey.model.User;
 import org.petya8bachey.service.StockService;
 import org.petya8bachey.service.TransactionService;
 import org.petya8bachey.service.UserService;
-import org.petya8bachey.service.SessionService; // Import SessionService
-import org.petya8bachey.service.RepositoryService; // Import RepositoryService
+import org.petya8bachey.service.SessionService;
+import org.petya8bachey.service.RepositoryService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,18 +26,17 @@ public class LoginFrame extends JFrame {
     private final UserService userService;
     private final StockService stockService;
     private final TransactionService transactionService;
-    private final SessionService sessionService; // Inject SessionService
-    private final RepositoryService repositoryService; // Inject RepositoryService
+    private final SessionService sessionService;
+    private final RepositoryService repositoryService;
 
-    // Update constructor to accept new services
     public LoginFrame(UserService userService, StockService stockService,
                       TransactionService transactionService, SessionService sessionService,
-                      RepositoryService repositoryService) { // Add new services
+                      RepositoryService repositoryService) {
         this.userService = userService;
         this.stockService = stockService;
         this.transactionService = transactionService;
-        this.sessionService = sessionService; // Assign service
-        this.repositoryService = repositoryService; // Assign service
+        this.sessionService = sessionService;
+        this.repositoryService = repositoryService;
 
         setTitle("Авторизация");
         setSize(350, 200);
@@ -88,7 +87,6 @@ public class LoginFrame extends JFrame {
                 if (clientProfile != null) {
                     dispose();
                     SwingUtilities.invokeLater(() -> {
-                        // Pass all services to ClientFrame
                         new ClientFrame(clientProfile, userService, stockService, transactionService, sessionService, repositoryService).setVisible(true);
                     });
                 } else {
@@ -100,7 +98,6 @@ public class LoginFrame extends JFrame {
                 if (brokerProfile != null) {
                     dispose();
                     SwingUtilities.invokeLater(() -> {
-                        // Corrected: Pass all five services to BrokerFrame
                         new BrokerFrame(brokerProfile, userService, stockService, transactionService, sessionService, repositoryService).setVisible(true);
                     });
                 } else {
@@ -110,7 +107,6 @@ public class LoginFrame extends JFrame {
             } else if (user.getRole() == UserRole.ADMIN) {
                 dispose();
                 SwingUtilities.invokeLater(() -> {
-                    // Corrected: Pass all five services to AdminFrame
                     new AdminFrame(user, userService, stockService, transactionService, sessionService, repositoryService).setVisible(true);
                 });
             }

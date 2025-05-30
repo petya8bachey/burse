@@ -1,5 +1,3 @@
-// src/main/java/org/petya8bachey/model/Transaction.java
-
 package org.petya8bachey.model;
 
 import jakarta.persistence.*;
@@ -33,13 +31,10 @@ public class Transaction {
     @Column(name = "direction", nullable = false)
     private TransactionDirection direction;
 
-    // Relationships
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
-    // CHANGE THIS LINE: from FetchType.LAZY to FetchType.EAGER
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;
@@ -48,7 +43,6 @@ public class Transaction {
     @JoinColumn(name = "repo_id", nullable = false)
     private Repository repository;
 
-    // A transaction involves a specific stock
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;

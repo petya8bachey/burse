@@ -32,17 +32,13 @@ public class Session {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private SessionStatus status = SessionStatus.PLANNED; // Default value
+    private SessionStatus status = SessionStatus.PLANNED;
 
-    // Relationships
-
-    // "Участвует в" (М:М) Клиент -> Торговая сессия (Session is on the 'Many' side)
     @ManyToMany(mappedBy = "participatingSessions")
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
     private Set<Client> participatingClients = new HashSet<>();
 
-    // "Осуществляется в" (М:1) Сделка -> Торговая сессия (Session is on the '1' side)
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude // Avoid infinite loop in toString()
+    @ToString.Exclude
     private Set<Transaction> transactions = new HashSet<>();
 }

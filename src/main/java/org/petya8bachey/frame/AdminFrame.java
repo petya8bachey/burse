@@ -1,6 +1,5 @@
 package org.petya8bachey.frame;
 
-import org.petya8bachey.frame.LoginFrame;
 import org.petya8bachey.model.User;
 import org.petya8bachey.service.StockService;
 import org.petya8bachey.service.TransactionService;
@@ -19,18 +18,17 @@ public class AdminFrame extends JFrame {
     private final UserService userService;
     private final StockService stockService;
     private final TransactionService transactionService;
-    private final SessionService sessionService; // NEW
-    private final RepositoryService repositoryService; // NEW
+    private final SessionService sessionService;
+    private final RepositoryService repositoryService;
 
-    // Конструктор теперь принимает все необходимые сервисы, включая новые
     public AdminFrame(User adminUser, UserService userService, StockService stockService,
-                      TransactionService transactionService, SessionService sessionService, // NEW
-                      RepositoryService repositoryService) { // NEW
+                      TransactionService transactionService, SessionService sessionService,
+                      RepositoryService repositoryService) {
         this.userService = userService;
         this.stockService = stockService;
         this.transactionService = transactionService;
-        this.sessionService = sessionService; // NEW
-        this.repositoryService = repositoryService; // NEW
+        this.sessionService = sessionService;
+        this.repositoryService = repositoryService;
 
         if (adminUser == null) {
             JOptionPane.showMessageDialog(null, "Ошибка: Данные администратора не найдены.", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -77,7 +75,6 @@ public class AdminFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             dispose();
             SwingUtilities.invokeLater(() -> {
-                // Передаем ВСЕ пять сервисов в LoginFrame
                 new LoginFrame(userService, stockService, transactionService, sessionService, repositoryService).setVisible(true);
             });
         });

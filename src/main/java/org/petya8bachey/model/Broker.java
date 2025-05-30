@@ -3,7 +3,7 @@ package org.petya8bachey.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode; // Import this
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.petya8bachey.enums.BrokerStatus;
@@ -36,12 +36,12 @@ public class Broker {
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id", unique = true)
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @OneToMany(mappedBy = "broker", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Set<Client> clients = new HashSet<>();
 
     @ManyToMany
@@ -51,6 +51,6 @@ public class Broker {
             inverseJoinColumns = @JoinColumn(name = "stock_id")
     )
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Set<Stock> registeredStocks = new HashSet<>();
 }

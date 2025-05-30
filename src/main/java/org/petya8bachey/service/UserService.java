@@ -44,22 +44,14 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    /**
-     * Аутентифицирует пользователя по имени пользователя и "сырому" паролю.
-     * @param username Имя пользователя, введенное пользователем.
-     * @param rawPassword "Сырой" пароль, введенный пользователем.
-     * @return Optional<User>, содержащий объект User, если аутентификация успешна,
-     *         или Optional.empty() в противном случае.
-     */
     public Optional<User> authenticate(String username, String rawPassword) {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            // Сравниваем "сырой" пароль с хешированным паролем
             if (passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-                return Optional.of(user); // Аутентификация успешна, возвращаем пользователя
+                return Optional.of(user);
             }
         }
-        return Optional.empty(); // Пользователь не найден или пароль неверный
+        return Optional.empty();
     }
 }

@@ -26,14 +26,11 @@ public class SessionService {
         return sessionRepository.findById(id);
     }
 
-    // Method to find the currently active session
     public Optional<Session> findActiveSession() {
-        // Assuming there's only one active session at a time for simplicity
         List<Session> activeSessions = sessionRepository.findByStatus(SessionStatus.ACTIVE);
         if (activeSessions.isEmpty()) {
             return Optional.empty();
         }
-        // Return the first active session found
         return Optional.of(activeSessions.get(0));
     }
 }

@@ -3,7 +3,7 @@ package org.petya8bachey.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode; // Import this
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.petya8bachey.enums.UserRole;
@@ -37,11 +37,11 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Broker brokerProfile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = true)
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude // ADD THIS LINE
+    @EqualsAndHashCode.Exclude
     private Client clientProfile;
 }

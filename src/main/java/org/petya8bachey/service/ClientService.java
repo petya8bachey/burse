@@ -14,7 +14,7 @@ import java.util.UUID;
 public class ClientService {
 
     private final ClientRepository clientRepository;
-    private final UserRepository userRepository; // Для проверки связи пользователя с клиентом
+    private final UserRepository userRepository;
 
     public ClientService(ClientRepository clientRepository, UserRepository userRepository) {
         this.clientRepository = clientRepository;

@@ -1,44 +1,42 @@
 package org.petya8bachey.frame;
 
-import org.petya8bachey.enums.TransactionDirection; // Import TransactionDirection
+import org.petya8bachey.enums.TransactionDirection;
 import org.petya8bachey.model.Client;
 import org.petya8bachey.model.Stock;
 import org.petya8bachey.model.Transaction;
 import org.petya8bachey.service.StockService;
 import org.petya8bachey.service.TransactionService;
 import org.petya8bachey.service.UserService;
-import org.petya8bachey.service.SessionService; // Import SessionService
-import org.petya8bachey.service.RepositoryService; // Import RepositoryService
+import org.petya8bachey.service.SessionService;
+import org.petya8bachey.service.RepositoryService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors; // Import Collectors
 
 public class ClientFrame extends JFrame {
 
     private final UserService userService;
     private final StockService stockService;
     private final TransactionService transactionService;
-    private final SessionService sessionService; // Inject SessionService
-    private final RepositoryService repositoryService; // Inject RepositoryService
-    private final Client currentClient; // Сохраняем текущего клиента
+    private final SessionService sessionService;
+    private final RepositoryService repositoryService;
+    private final Client currentClient;
 
-    private JTabbedPane tabbedPane; // Keep a reference to the tabbed pane
-    private JPanel transactionsPanel; // Keep a reference to the transactions panel
+    private JTabbedPane tabbedPane;
+    private JPanel transactionsPanel;
 
-    // Конструктор теперь принимает все необходимые сервисы
     public ClientFrame(Client client, UserService userService, StockService stockService,
                        TransactionService transactionService, SessionService sessionService,
-                       RepositoryService repositoryService) { // Add new services
+                       RepositoryService repositoryService) {
         this.userService = userService;
         this.stockService = stockService;
         this.transactionService = transactionService;
-        this.sessionService = sessionService; // Assign service
-        this.repositoryService = repositoryService; // Assign service
-        this.currentClient = client; // Сохраняем клиента
+        this.sessionService = sessionService;
+        this.repositoryService = repositoryService;
+        this.currentClient = client;
 
         if (client == null) {
             JOptionPane.showMessageDialog(null, "Ошибка: Данные клиента не найдены.", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -47,57 +45,47 @@ public class ClientFrame extends JFrame {
         }
 
         setTitle("Окно клиента: " + client.getFullName());
-        setSize(800, 600); // Увеличиваем размер для таблиц
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        tabbedPane = new JTabbedPane();
 
-        // Используем JTabbedPane для организации вкладок
-        tabbedPane = new JTabbedPane(); // Initialize tabbedPane
-
-        // --- Вкладка "Мои Данные" ---
         JPanel personalInfoPanel = createPersonalInfoPanel(client);
         tabbedPane.addTab("Мои Данные", personalInfoPanel);
 
-        // --- Вкладка "Мои Торгуемые Акции" ---
         JPanel tradedStocksPanel = createTradedStocksPanel(client);
         tabbedPane.addTab("Мои Торгуемые Акции", tradedStocksPanel);
 
-        // --- Вкладка "Мои Сделки" ---
-        transactionsPanel = createTransactionsPanel(client); // Initialize transactionsPanel
+        transactionsPanel = createTransactionsPanel(client);
         tabbedPane.addTab("Мои Сделки", transactionsPanel);
 
-        // --- Вкладка "Доступные Акции" ---
         JPanel availableStocksPanel = createAvailableStocksPanel();
         tabbedPane.addTab("Доступные Акции", availableStocksPanel);
 
         add(tabbedPane, BorderLayout.CENTER);
 
-        // Добавляем кнопку "Выход" внизу окна
-        JPanel bottomPanel = new JPanel(new BorderLayout()); // Используем BorderLayout для нижней панели
+        JPanel bottomPanel = new JPanel(new BorderLayout());
         JButton logoutButton = new JButton("Выход");
         logoutButton.addActionListener(e -> {
-            dispose(); // Закрыть текущее окно клиента
-            // Открыть новое окно авторизации
+            dispose();
             SwingUtilities.invokeLater(() -> {
-                // Передаем все сервисы обратно в LoginFrame
                 new LoginFrame(userService, stockService, transactionService, sessionService, repositoryService).setVisible(true); // Pass new services
             });
         });
-        JPanel logoutButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Панель для выравнивания кнопки
+        JPanel logoutButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         logoutButtonPanel.add(logoutButton);
-        bottomPanel.add(logoutButtonPanel, BorderLayout.EAST); // Размещаем кнопку справа
+        bottomPanel.add(logoutButtonPanel, BorderLayout.EAST);
 
-        // Добавляем кнопки действий (пока просто заглушки)
         JPanel actionButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton buyButton = new JButton("Купить Акцию");
-        buyButton.addActionListener(e -> openTransactionDialog(TransactionDirection.BUY)); // Add action listener
+        buyButton.addActionListener(e -> openTransactionDialog(TransactionDirection.BUY));
 
         JButton sellButton = new JButton("Продать Акцию");
-        sellButton.addActionListener(e -> openTransactionDialog(TransactionDirection.SELL)); // Add action listener
+        sellButton.addActionListener(e -> openTransactionDialog(TransactionDirection.SELL));
 
         actionButtonsPanel.add(buyButton);
         actionButtonsPanel.add(sellButton);
-        bottomPanel.add(actionButtonsPanel, BorderLayout.WEST); // Размещаем кнопки действий слева
+        bottomPanel.add(actionButtonsPanel, BorderLayout.WEST);
 
         add(bottomPanel, BorderLayout.SOUTH);
     }
@@ -128,7 +116,6 @@ public class ClientFrame extends JFrame {
 
     private JPanel createTradedStocksPanel(Client client) {
         JPanel panel = new JPanel(new BorderLayout());
-        // Ensure tradedStocks is initialized, even if empty
         Set<Stock> tradedStocks = client.getTradedStocks() != null ? client.getTradedStocks() : new java.util.HashSet<>();
 
         if (tradedStocks.isEmpty()) {
@@ -149,7 +136,7 @@ public class ClientFrame extends JFrame {
         }
 
         JTable table = new JTable(model);
-        table.setFillsViewportHeight(true); // Таблица заполняет всю доступную высоту
+        table.setFillsViewportHeight(true);
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane, BorderLayout.CENTER);
 
@@ -158,7 +145,6 @@ public class ClientFrame extends JFrame {
 
     private JPanel createTransactionsPanel(Client client) {
         JPanel panel = new JPanel(new BorderLayout());
-        // Используем transactionService для получения сделок
         List<Transaction> transactions = transactionService.getTransactionsByClient(client);
 
         if (transactions == null || transactions.isEmpty()) {
@@ -170,25 +156,23 @@ public class ClientFrame extends JFrame {
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 
         for (Transaction tx : transactions) {
-            // Ensure session is not null and initialized before accessing it
             String sessionTime = "N/A";
             if (tx.getSession() != null) {
                 try {
                     sessionTime = tx.getSession().getStartTime().toString();
                 } catch (org.hibernate.LazyInitializationException lie) {
-                    // This catch block is less likely with EAGER fetch, but good for debugging
                     System.err.println("LazyInitializationException caught for Session in Transaction: " + tx.getTransactionId());
                     sessionTime = "Error Loading Session";
                 }
             }
 
             model.addRow(new Object[]{
-                    tx.getTransactionId().toString().substring(0, 8) + "...", // Сокращаем UUID
+                    tx.getTransactionId().toString().substring(0, 8) + "...",
                     tx.getStock().getCompanyName() + " (" + tx.getStock().getStockId() + ")",
                     tx.getDirection(),
                     tx.getVolume(),
                     tx.getPrice(),
-                    sessionTime // Display session start time
+                    sessionTime
             });
         }
 
@@ -202,7 +186,7 @@ public class ClientFrame extends JFrame {
 
     private JPanel createAvailableStocksPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        List<Stock> allStocks = stockService.findAllStocks(); // Получаем все акции
+        List<Stock> allStocks = stockService.findAllStocks();
 
         if (allStocks == null || allStocks.isEmpty()) {
             panel.add(new JLabel("В системе пока нет зарегистрированных акций.", SwingConstants.CENTER), BorderLayout.CENTER);
@@ -231,7 +215,7 @@ public class ClientFrame extends JFrame {
 
     // New method to open the transaction dialog
     private void openTransactionDialog(TransactionDirection direction) {
-        List<Stock> availableStocks = stockService.findAllStocks(); // Get all available stocks
+        List<Stock> availableStocks = stockService.findAllStocks();
 
         if (availableStocks == null || availableStocks.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Нет доступных акций для торговли.", "Ошибка", JOptionPane.WARNING_MESSAGE);
@@ -244,20 +228,17 @@ public class ClientFrame extends JFrame {
                 availableStocks,
                 direction,
                 transactionService,
-                sessionService, // Pass SessionService
-                repositoryService // Pass RepositoryService
+                sessionService,
+                repositoryService
         );
-        dialog.setVisible(true); // Show the dialog (this call is blocking)
+        dialog.setVisible(true);
 
-        // After the dialog is closed, check if the transaction was successful
         if (dialog.isTransactionSuccessful()) {
-            refreshTransactionsPanel(); // Refresh the transactions tab
+            refreshTransactionsPanel();
         }
     }
 
-    // New method to refresh the transactions panel
     private void refreshTransactionsPanel() {
-        // Find the index of the "Мои Сделки" tab
         int transactionsTabIndex = -1;
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if ("Мои Сделки".equals(tabbedPane.getTitleAt(i))) {
@@ -267,16 +248,9 @@ public class ClientFrame extends JFrame {
         }
 
         if (transactionsTabIndex != -1) {
-            // Remove the old panel
             tabbedPane.removeTabAt(transactionsTabIndex);
-
-            // Create a new panel with updated data
             transactionsPanel = createTransactionsPanel(currentClient);
-
-            // Insert the new panel at the same index
             tabbedPane.insertTab("Мои Сделки", null, transactionsPanel, null, transactionsTabIndex);
-
-            // Select the updated tab
             tabbedPane.setSelectedIndex(transactionsTabIndex);
         }
     }
